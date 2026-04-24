@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Goods Sorting</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  /* ─── Reset & Root ─────────────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --wood-dark:   #3E2723;
+    --wood-mid:    #6D4C41;
+    --wood-light:  #A1887F;
+    --wood-pale:   #D7CCC8;
+    --wood-cream:  #EFEBE9;
+    --plank:       #795548;
+    --plank-edge:  #5D4037;
+    --gold:        #FFD180;
+    --gold-deep:   #FFB300;
+    --orange:      #E65100;
+    --cream-text:  #EFEBE9;
+    --muted-gold:  rgba(255,200,100,0.55);
+  }
+
+  html, body {
+    height: 100%;
+    background: var(--wood-dark);
+  }
+
+  body {
+    font-family: 'Lato', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    background:
+      repeating-linear-gradient(
+        92deg,
+        transparent 0px,
+        transparent 60px,
+        rgba(0,0,0,0.04) 60px,
+        rgba(0,0,0,0.04) 61px
+      ),
+      linear-gradient(160deg, #2C1A14 0%, #5D3A2A 45%, #7A5244 100%);
+    min-height: 100vh;
+  }
+
+  /* ─── Game Container ───────────────────────────────────────── */
+  #game {
+    width: 100%;
+    max-width: 430px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    padding-bottom: 28px;
+  }
+
+  /* ─── Header ───────────────────────────────────────────────── */
+  #header {
+    background: rgba(0,0,0,0.38);
+    border-bottom: 2px solid var(--muted-gold);
+    padding: 14px 20px 12px;
+    backdrop-filter: blur(6px);
+  }
+
+  #title {
+    font-family: 'Playfair Display', serif;
+    color: var(--gold);
+    font-size: 24px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    margin-bottom: 12px;
+  }
+  #title span { font-size: 22px; margin-right: 6px; }
+
+  #stats {
+    display: flex;
+    gap: 8px;
+  }
+  .stat {
+    flex: 1;
+    background: rgba(255,255,255,0.09);
+    border: 1px solid rgba(255,200,100,0.18);
+    border-radius: 10px;
+    padding: 6px 4px 8px;
+    text-align: center;
+  }
+  .stat-lbl {
+    display: block;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: rgba(255,220,150,0.65);
+    margin-bottom: 3px;
+  }
+  .stat-val {
+    display: block;
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+    transition: transform 0.15s;
+  }
+  .stat-val.bump { animation: statBump 0.25s ease; }
+
+  /* ─── Status Bar ───────────────────────────────────────────── */
+  #status {
+    background: rgba(0,0,0,0.28);
+    color: #FFE082;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    text-align: center;
+    padding: 8px 16px;
+    min-height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255,200,80,0.12);
+    transition: background 0.25s;
+  }
+
+  /* ─── Shelf Grid Wrapper ───────────────────────────────────── */
+  #shelf-area {
+    padding: 14px 14px 8px;
+    flex: 1;
+  }
+
+  /* Outer frame simulating a wooden cabinet */
+  #cabinet {
+    background:
+      repeating-linear-gradient(
+        0deg,
+        rgba(0,0,0,0.06) 0px,
+        rgba(0,0,0,0.06) 1px,
+        transparent 1px,
+        transparent 28px
+      ),
+      rgba(0,0,0,0.22);
+    border-radius: 16px;
+    padding: 12px;
+    border: 3px solid rgba(255,170,60,0.22);
+    box-shadow:
+      inset 0 3px 12px rgba(0,0,0,0.45),
+      0 6px 24px rgba(0,0,0,0.5);
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+
+  /* ─── Individual Shelf Niche ───────────────────────────────── */
+  .shelf {
+    background: linear-gradient(180deg, #EFEBE9 0%, #D7CCC8 70%, #BCAAA4 100%);
+    border-radius: 10px;
+    border: 2px solid rgba(121,85,72,0.5);
+    cursor: pointer;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 6px 0;
+    min-height: 108px;
+    box-shadow:
+      0 4px 10px rgba(0,0,0,0.32),
+      inset 0 1px 0 rgba(255,255,255,0.55);
+    transition: transform 0.13s, box-shadow 0.13s, border-color 0.13s;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shelf:hover { transform: translateY(-2px); }
+
+  .shelf.selected {
+    border-color: var(--gold-deep);
+    box-shadow:
+      0 0 0 3px rgba(255,179,0,0.55),
+      0 4px 12px rgba(0,0,0,0.35);
+    transform: translateY(-4px);
+    background: linear-gradient(180deg, #FFF8E1 0%, #FFE082 100%);
+    animation: shelfPulse 1.4s infinite;
+  }
+
+  .shelf.celebrating {
+    animation: matchFlash 0.75s ease-out;
+  }
+
+  .shelf-num {
+    position: absolute;
+    top: 5px;
+    left: 7px;
+    font-size: 8px;
+    font-weight: 700;
+    color: rgba(93,64,55,0.55);
+    letter-spacing: 0.5px;
+  }
+
+  /* Items row */
+  .items-row {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    align-items: flex-end;
+    flex: 1;
+    width: 100%;
+    padding-bottom: 2px;
+  }
+
+  .slot {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px dashed rgba(141,110,99,0.3);
+    background: rgba(255,255,255,0.22);
+    transition: transform 0.15s;
+    font-size: 20px;
+    line-height: 1;
+    position: relative;
+  }
+  .slot.filled {
+    border-style: solid;
+    border-width: 2px;
+  }
+  .slot.top-item {
+    /* the topmost item (last placed) gets highlighted when shelf is selected */
+  }
+  .shelf.selected .slot.top-item {
+    transform: scale(1.2) translateY(-4px);
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+  }
+
+  /* Wood plank at bottom of each shelf */
+  .plank {
+    width: calc(100% + 12px);
+    height: 9px;
+    background: linear-gradient(90deg,
+      var(--plank-edge) 0%, var(--plank) 30%,
+      #A1887F 55%, var(--plank) 75%,
+      var(--plank-edge) 100%);
+    border-radius: 0 0 6px 6px;
+    margin-top: 7px;
+    box-shadow: 0 5px 8px rgba(0,0,0,0.4);
+    border-top: 1px solid rgba(255,255,255,0.18);
+    flex-shrink: 0;
+  }
+
+  /* TRIO overlay */
+  .trio-badge {
+    position: absolute;
+    inset: 0;
+    border-radius: 8px;
+    background: rgba(255,143,0,0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 2px;
+    z-index: 10;
+    pointer-events: none;
+    opacity: 0;
+    animation: trioBadge 0.75s ease-out forwards;
+  }
+
+  /* Floating particle */
+  .particle {
+    position: fixed;
+    font-size: 22px;
+    pointer-events: none;
+    z-index: 999;
+    animation: particleFly 0.9s ease-out forwards;
+  }
+
+  /* ─── Bottom Actions ───────────────────────────────────────── */
+  #actions {
+    display: flex;
+    gap: 10px;
+    padding: 10px 16px 0;
+    justify-content: center;
+  }
+
+  .btn {
+    flex: 1;
+    max-width: 160px;
+    padding: 11px 0;
+    border-radius: 12px;
+    border: none;
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.1s, box-shadow 0.1s;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.35);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:active { transform: scale(0.96); box-shadow: 0 2px 6px rgba(0,0,0,0.3); }
+
+  #btn-cancel {
+    background: rgba(183,28,28,0.85);
+    color: #fff;
+    display: none;
+  }
+  #btn-reset {
+    background: rgba(30,15,10,0.85);
+    color: var(--gold);
+    border: 1.5px solid rgba(255,200,80,0.3);
+  }
+
+  /* ─── Combo Banner ─────────────────────────────────────────── */
+  #combo-banner {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) scale(0.5);
+    background: linear-gradient(135deg, #E65100, #FF6D00);
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    padding: 14px 32px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.55);
+    pointer-events: none;
+    z-index: 500;
+    opacity: 0;
+    white-space: nowrap;
+  }
+  #combo-banner.show {
+    animation: comboIn 0.85s cubic-bezier(0.34,1.56,0.64,1) forwards;
+  }
+
+  /* ─── Game Over Modal ──────────────────────────────────────── */
+  #modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20,8,4,0.82);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 800;
+    backdrop-filter: blur(4px);
+  }
+  #modal-overlay.show { display: flex; }
+
+  #modal {
+    background: linear-gradient(160deg, #EFEBE9, #D7CCC8);
+    border-radius: 22px;
+    padding: 36px 30px 28px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.65);
+    border: 3px solid rgba(255,180,70,0.55);
+    min-width: 270px;
+    max-width: 340px;
+    animation: modalIn 0.4s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  #modal-emoji { font-size: 58px; margin-bottom: 10px; }
+  #modal-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 30px;
+    font-weight: 900;
+    color: #4E342E;
+    margin-bottom: 8px;
+  }
+  #modal-sub {
+    font-size: 15px;
+    color: #6D4C41;
+    margin-bottom: 16px;
+    line-height: 1.6;
+  }
+  #modal-score {
+    font-family: 'Playfair Display', serif;
+    font-size: 40px;
+    font-weight: 900;
+    color: var(--orange);
+    margin-bottom: 26px;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.18);
+  }
+  #modal-score span { font-size: 18px; color: #8D6E63; display: block; margin-bottom: 4px; }
+  #btn-play-again {
+    background: var(--orange);
+    color: #fff;
+    font-family: 'Playfair Display', serif;
+    font-size: 17px;
+    font-weight: 700;
+    border: none;
+    border-radius: 13px;
+    padding: 14px 40px;
+    cursor: pointer;
+    box-shadow: 0 5px 16px rgba(0,0,0,0.35);
+    letter-spacing: 1px;
+    transition: transform 0.1s;
+  }
+  #btn-play-again:active { transform: scale(0.96); }
+
+  /* ─── Keyframes ────────────────────────────────────────────── */
+  @keyframes statBump {
+    0%   { transform: scale(1); }
+    40%  { transform: scale(1.35); }
+    100% { transform: scale(1); }
+  }
+  @keyframes shelfPulse {
+    0%, 100% { box-shadow: 0 0 0 3px rgba(255,179,0,0.55), 0 4px 12px rgba(0,0,0,0.35); }
+    50%       { box-shadow: 0 0 0 6px rgba(255,179,0,0.25), 0 4px 12px rgba(0,0,0,0.35); }
+  }
+  @keyframes matchFlash {
+    0%   { background: linear-gradient(180deg,#FFF9C4,#FFF176 60%,#BCAAA4 100%); }
+    50%  { background: linear-gradient(180deg,#FFD54F,#FFCA28 60%,#BCAAA4 100%); }
+    100% { background: linear-gradient(180deg,#EFEBE9,#D7CCC8 70%,#BCAAA4 100%); }
+  }
+  @keyframes trioBadge {
+    0%   { opacity: 1; transform: scale(0.7); }
+    60%  { opacity: 1; transform: scale(1.05); }
+    100% { opacity: 0; transform: scale(1.1); }
+  }
+  @keyframes particleFly {
+    0%   { opacity: 1; transform: translate(0, 0) scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: translate(var(--dx), var(--dy)) scale(0.4) rotate(var(--dr)); }
+  }
+  @keyframes comboIn {
+    0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.4) rotate(-4deg); }
+    60%  { opacity: 1; transform: translate(-50%,-50%) scale(1.08) rotate(1deg); }
+    80%  { opacity: 1; transform: translate(-50%,-50%) scale(0.98); }
+    100% { opacity: 0; transform: translate(-50%,-60%) scale(1); }
+  }
+  @keyframes modalIn {
+    from { transform: scale(0.7) translateY(30px); opacity: 0; }
+    to   { transform: scale(1) translateY(0); opacity: 1; }
+  }
+  @keyframes itemDrop {
+    0%   { transform: translateY(-10px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+<div id="game">
+
+  <!-- ── Header ──────────────────────────────────────────────── -->
+  <div id="header">
+    <div id="title"><span>🛒</span>Goods Sorting</div>
+    <div id="stats">
+      <div class="stat">
+        <span class="stat-lbl">Pontos</span>
+        <span class="stat-val" id="val-score">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-lbl">Movimentos</span>
+        <span class="stat-val" id="val-moves">0</span>
+      </div>
+      <div class="stat">
+        <span class="stat-lbl">Itens</span>
+        <span class="stat-val" id="val-items">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Status Bar ──────────────────────────────────────────── -->
+  <div id="status">Toque em um produto para começar</div>
+
+  <!-- ── Cabinet / Shelf Grid ────────────────────────────────── -->
+  <div id="shelf-area">
+    <div id="cabinet"></div>
+  </div>
+
+  <!-- ── Buttons ─────────────────────────────────────────────── -->
+  <div id="actions">
+    <button class="btn" id="btn-cancel" onclick="cancelSelection()">✕ Cancelar</button>
+    <button class="btn" id="btn-reset"  onclick="resetGame()">🔄 Novo Jogo</button>
+  </div>
+
+</div>
+
+<!-- ── Combo Banner ─────────────────────────────────────────── -->
+<div id="combo-banner"></div>
+
+<!-- ── Game Over Modal ─────────────────────────────────────── -->
+<div id="modal-overlay">
+  <div id="modal">
+    <div id="modal-emoji">🏆</div>
+    <div id="modal-title">Parabéns!</div>
+    <div id="modal-sub">Você organizou tudo com<br>sucesso!</div>
+    <div id="modal-score"><span>Pontuação Final</span><span id="modal-score-val">0</span></div>
+    <button id="btn-play-again" onclick="resetGame()">Jogar Novamente</button>
+  </div>
+</div>
+
+<script>
+/* ─────────────────────────────────────────────────────────────
+   GOODS SORTING — Game Logic
+   ─────────────────────────────────────────────────────────────
+   Estado:
+     shelves[]  — array de 9 arrays (cada um com até 3 emojis)
+     selected   — índice da prateleira selecionada (null = nenhuma)
+     score, moves — contadores
+   ───────────────────────────────────────────────────────────── */
+
+const SHELF_COUNT    = 9;
+const SHELF_CAP      = 3;   // máx itens por prateleira
+const ITEMS = ["🍎","🍋","🍇","🧁","🥕","🧃","🍬","🫐","🍩"];
+
+// Cor de fundo e borda para cada emoji
+const ITEM_BG     = {"🍎":"#FDECEA","🍋":"#FFFDE7","🍇":"#F3E5F5","🧁":"#FCE4EC","🥕":"#FFF3E0","🧃":"#E8F5E9","🍬":"#E8EAF6","🫐":"#E3F2FD","🍩":"#FFF8E1"};
+const ITEM_BORDER = {"🍎":"#E57373","🍋":"#FDD835","🍇":"#AB47BC","🧁":"#F06292","🥕":"#FFA726","🧃":"#66BB6A","🍬":"#7986CB","🫐":"#42A5F5","🍩":"#FFCA28"};
+
+// Distribuição inicial — múltiplos de 3 para garantir solubilidade
+const SEED = {
+  "🍎":6,"🍋":6,"🍇":6,
+  "🧁":6,"🥕":6,"🧃":3,
+  "🍬":3,"🫐":3,"🍩":3
+};
+
+let shelves  = [];
+let selected = null;
+let score    = 0;
+let moves    = 0;
+
+/* ── Inicializa o tabuleiro ─────────────────────────────────── */
+function buildShelves() {
+  // Cria pool flat com todos os itens
+  const pool = [];
+  Object.entries(SEED).forEach(([e, n]) => {
+    for (let i = 0; i < n; i++) pool.push(e);
+  });
+
+  // Fisher-Yates shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+
+  // Distribui pelas prateleiras (máx SHELF_CAP por prateleira)
+  const s = Array.from({ length: SHELF_COUNT }, () => []);
+  let idx = 0;
+  while (idx < pool.length) {
+    for (let si = 0; si < SHELF_COUNT && idx < pool.length; si++) {
+      if (s[si].length < SHELF_CAP) s[si].push(pool[idx++]);
+    }
+  }
+  return s;
+}
+
+/* ── Contagem total de itens ────────────────────────────────── */
+function countItems() {
+  return shelves.reduce((s, sh) => s + sh.length, 0);
+}
+
+/* ────────────────────────────────────────────────────────────
+   checkMatch — Detecção de trios (LÓGICA CENTRAL)
+
+   Percorre todas as prateleiras e busca a condição de trio:
+     • A prateleira está CHEIA (length === SHELF_CAP = 3)
+     • TODOS os itens são idênticos (every item === shelf[0])
+
+   Quando encontrado:
+     1. Remove os 3 itens da prateleira (zera o array)
+     2. Retorna o índice da prateleira e o emoji combinado
+
+   Retorna: { matchIdx: number|-1, matchEmoji: string|null }
+   ─────────────────────────────────────────────────────────── */
+function checkMatch() {
+  for (let i = 0; i < shelves.length; i++) {
+    const sh = shelves[i];
+
+    // Condição de trio: cheia E todos iguais
+    if (sh.length === SHELF_CAP && sh.every(item => item === sh[0])) {
+      const emoji = sh[0];
+      shelves[i] = [];          // Limpa a prateleira
+      return { matchIdx: i, matchEmoji: emoji };
+    }
+  }
+  return { matchIdx: -1, matchEmoji: null };
+}
+
+/* ── handleMove: move item de uma prateleira para outra ─────── */
+function handleMove(from, to) {
+  if (from === to) return;                       // mesma prateleira → cancela
+  if (shelves[to].length >= SHELF_CAP) {         // destino cheio?
+    setStatus("❌ Sem espaço nessa prateleira!");
+    return;
+  }
+
+  const item = shelves[from].pop();              // tira o item do topo
+  shelves[to].push(item);                        // coloca no destino
+  moves++;
+  updateStats();
+
+  // ── Detecta trio após o movimento
+  const { matchIdx, matchEmoji } = checkMatch();
+
+  if (matchIdx !== -1) {
+    // Trio encontrado! Pontua e celebra
+    score += 150;
+    updateStats();
+    renderShelves();
+    celebrateShelf(matchIdx, matchEmoji);
+    setStatus(`🎉 +150 pts! Trio de ${matchEmoji}`);
+
+    // Verifica vitória
+    if (countItems() === 0) {
+      setTimeout(showGameOver, 950);
+    }
+  } else {
+    renderShelves();
+    setStatus(`Moveu ${item} para a prateleira ${to + 1}`);
+  }
+}
+
+/* ── Clique em uma prateleira ───────────────────────────────── */
+function onShelfClick(idx) {
+  if (document.getElementById('modal-overlay').classList.contains('show')) return;
+
+  if (selected === null) {
+    // Primeiro clique: seleciona origem
+    if (shelves[idx].length === 0) {
+      setStatus("Prateleira vazia! Escolha outra.");
+      return;
+    }
+    selected = idx;
+    document.getElementById('btn-cancel').style.display = 'block';
+    renderShelves();
+    setStatus("Toque em outra prateleira para mover");
+  } else {
+    // Segundo clique: executa o movimento
+    const from = selected;
+    selected = null;
+    document.getElementById('btn-cancel').style.display = 'none';
+    handleMove(from, idx);
+  }
+}
+
+function cancelSelection() {
+  selected = null;
+  document.getElementById('btn-cancel').style.display = 'none';
+  renderShelves();
+  setStatus("Seleção cancelada");
+}
+
+/* ── Renderiza todas as prateleiras ─────────────────────────── */
+function renderShelves() {
+  const cabinet = document.getElementById('cabinet');
+
+  // Cria ou reutiliza elementos de prateleira
+  let shelfEls = cabinet.querySelectorAll('.shelf');
+
+  if (shelfEls.length !== SHELF_COUNT) {
+    cabinet.innerHTML = '';
+    for (let i = 0; i < SHELF_COUNT; i++) {
+      const el = document.createElement('div');
+      el.className = 'shelf';
+      el.dataset.idx = i;
+      el.onclick = () => onShelfClick(i);
+      cabinet.appendChild(el);
+    }
+    shelfEls = cabinet.querySelectorAll('.shelf');
+  }
+
+  shelfEls.forEach((el, i) => {
+    const shelf = shelves[i];
+    const isSel = selected === i;
+
+    // Classes de estado
+    el.classList.toggle('selected', isSel);
+
+    el.innerHTML = `<div class="shelf-num">${i + 1}</div>
+      <div class="items-row">${renderSlots(shelf, isSel)}</div>
+      <div class="plank"></div>`;
+  });
+
+  // Atualiza contagem de itens no header
+  document.getElementById('val-items').textContent = countItems();
+}
+
+/* ── Renderiza os 3 slots de uma prateleira ─────────────────── */
+function renderSlots(shelf, isSelected) {
+  let html = '';
+  for (let s = 0; s < SHELF_CAP; s++) {
+    const item = shelf[s];
+    const isTop = isSelected && s === shelf.length - 1;
+    if (item) {
+      const bg  = ITEM_BG[item]     || '#f0ebe4';
+      const brd = ITEM_BORDER[item] || '#c8b89a';
+      html += `<div class="slot filled${isTop ? ' top-item' : ''}"
+                   style="background:${bg};border-color:${brd};animation:itemDrop 0.18s ease">
+                 <span>${item}</span>
+               </div>`;
+    } else {
+      html += `<div class="slot"></div>`;
+    }
+  }
+  return html;
+}
+
+/* ── Animação de celebração de trio ─────────────────────────── */
+function celebrateShelf(shelfIdx, emoji) {
+  const shelfEls = document.querySelectorAll('.shelf');
+  const el = shelfEls[shelfIdx];
+  if (!el) return;
+
+  // Flash na prateleira
+  el.classList.add('celebrating');
+  setTimeout(() => el.classList.remove('celebrating'), 750);
+
+  // Badge TRIO! dentro da prateleira
+  const badge = document.createElement('div');
+  badge.className = 'trio-badge';
+  badge.textContent = 'TRIO!';
+  el.appendChild(badge);
+  setTimeout(() => badge.remove(), 800);
+
+  // Partículas voando da prateleira
+  const rect = el.getBoundingClientRect();
+  const cx = rect.left + rect.width  / 2;
+  const cy = rect.top  + rect.height / 2;
+
+  for (let i = 0; i < 12; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    const dx = (Math.random() - 0.5) * 140;
+    const dy = -(Math.random() * 120 + 40);
+    const dr = (Math.random() - 0.5) * 720;
+    p.style.cssText = `
+      left: ${cx}px; top: ${cy}px;
+      --dx: ${dx}px; --dy: ${dy}px; --dr: ${dr}deg;
+      animation-delay: ${i * 0.04}s;
+    `;
+    p.textContent = emoji;
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 1000);
+  }
+
+  // Banner central
+  const banner = document.getElementById('combo-banner');
+  banner.textContent = `${emoji} TRIO! +150`;
+  banner.classList.remove('show');
+  void banner.offsetWidth; // reflow para reiniciar animação
+  banner.classList.add('show');
+  setTimeout(() => banner.classList.remove('show'), 900);
+}
+
+/* ── Atualiza estatísticas no header ────────────────────────── */
+function updateStats() {
+  const scoreEl = document.getElementById('val-score');
+  const movesEl = document.getElementById('val-moves');
+  scoreEl.textContent = score;
+  movesEl.textContent = moves;
+  // Micro-animação de "bump"
+  scoreEl.classList.remove('bump');
+  movesEl.classList.remove('bump');
+  void scoreEl.offsetWidth;
+  scoreEl.classList.add('bump');
+  movesEl.classList.add('bump');
+}
+
+/* ── Mensagem de status ─────────────────────────────────────── */
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+/* ── Tela de game over ──────────────────────────────────────── */
+function showGameOver() {
+  document.getElementById('modal-sub').innerHTML =
+    `Você organizou tudo em <strong>${moves}</strong> movimentos!`;
+  document.getElementById('modal-score-val').textContent = score + ' pts';
+  document.getElementById('modal-overlay').classList.add('show');
+}
+
+/* ── Reset completo ─────────────────────────────────────────── */
+function resetGame() {
+  shelves  = buildShelves();
+  selected = null;
+  score    = 0;
+  moves    = 0;
+  document.getElementById('btn-cancel').style.display = 'none';
+  document.getElementById('modal-overlay').classList.remove('show');
+  updateStats();
+  renderShelves();
+  setStatus("Toque em um produto para começar");
+}
+
+/* ── Start ───────────────────────────────────────────────────── */
+resetGame();
+</script>
+</body>
+</html>
